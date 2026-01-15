@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Encrypt Me - Dark Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@300;400;500;600;700&display=swap');
+
+        :root {
+            --primary: #ffffff;
+            --accent: #3b82f6;
+            --bg-deep: #0a0a0c;
+            --bg-card: #141417;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--bg-deep);
+            background-image: 
+                radial-gradient(circle at 50% 0%, rgba(59, 130, 246, 0.08), transparent 40%),
+                radial-gradient(circle at 0% 100%, rgba(168, 85, 247, 0.05), transparent 40%);
+            color: var(--primary);
+            -webkit-font-smoothing: antialiased;
+            overflow-x: hidden;
+            width: 100%;
+        }
+
+        .mono-font {
+            font-family: 'JetBrains Mono', monospace;
+        }
+
+        /* Dark Responsive Navigation */
+        .nav-container {
+            display: inline-flex;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(12px);
+            padding: 4px;
+            border-radius: 14px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            box-shadow: inset 0 2px 4px rgba(0,0,0,0.2);
+            position: relative;
+            width: fit-content;
+        }
+
+        .tab-btn {
+            padding: 8px 24px;
+            border-radius: 10px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: #6b7280;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+        }
+
+        @media (min-width: 640px) {
+            .tab-btn {
+                padding: 10px 32px;
+                font-size: 0.875rem;
+            }
+        }
+
+        .tab-btn.active {
+            background: rgba(255, 255, 255, 0.15);
+            color: white;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Perfected RGB Glow Border */
+        .result-glow-container {
+            position: relative;
+            background: linear-gradient(135deg, #a855f7, #3b82f6, #a855f7, #3b82f6);
+            background-size: 300% 300%;
+            padding: 2px;
+            border-radius: 1.5rem; 
+            animation: gradientMove 4s ease infinite;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+            width: 100%;
+        }
+
+        @media (min-width: 640px) {
+            .result-glow-container {
+                padding: 3px;
+                border-radius: 2rem;
+            }
+        }
+
+        @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        /* Laminar Smooth Left-to-Right Flow with Stable Phase */
+        .rgb-text {
+            background: linear-gradient(to right, #3b82f6, #a855f7, #f43f5e, #3b82f6);
+            background-size: 300% auto;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            animation: laminarFlow 6s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+            font-weight: 800;
+        }
+
+        @keyframes laminarFlow {
+            0%, 50% { background-position: 0% center; }
+            100% { background-position: 300% center; }
+        }
+
+        .clean-footer {
+            background: transparent;
+            width: 100%;
+        }
+
+        /* Dark Responsive Matrix Grid */
+        .matrix-grid {
+            display: grid;
+            gap: 4px;
+            padding: 12px;
+            background: #1a1a1e;
+            border-radius: 16px;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            width: 100%;
+            max-width: 100%;
+            overflow: hidden;
+        }
+
+        @media (min-width: 640px) {
+            .matrix-grid {
+                gap: 8px;
+                padding: 20px;
+                border-radius: 20px;
+            }
+        }
+        
+        .matrix-cell {
+            aspect-ratio: 1 / 1;
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 1px solid rgba(255, 255, 255, 0.03);
+            background: #242429;
+            border-radius: 6px;
+            font-size: 10px;
+            font-weight: 700;
+            color: #9ca3af;
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            opacity: 0;
+            transform: translateY(10px);
+        }
+
+        .matrix-cell.active { opacity: 1; transform: translateY(0); }
+
+        .matrix-cell.substituting {
+            background-color: #fff;
+            color: #000;
+            transform: scale(1.1);
+            z-index: 20;
+        }
+
+        .matrix-cell.transposing {
+            background-color: #1e293b;
+            border-color: #3b82f6;
+            color: #3b82f6;
+            z-index: 10;
+        }
+
+        .log-feed {
+            height: 50px;
+            overflow-y: hidden;
+            font-size: 9px;
+            line-height: 1.4;
+            mask-image: linear-gradient(to top, white 60%, transparent 100%);
+        }
+
+        .log-entry {
+            color: #9ca3af;
+            border-left: 2px solid rgba(255, 255, 255, 0.1);
+            padding-left: 6px;
+            margin-bottom: 2px;
+        }
+
+        .glass-card {
+            background: rgba(20, 20, 23, 0.8);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            width: 100%;
+        }
+
+        .hidden-visually { display: none !important; }
+        
+        .fade-in {
+            animation: fadeIn 0.4s ease-out forwards;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #3b82f6 0%, #a855f7 100%);
+            width: 0%;
+            transition: width 0.4s ease;
+        }
+
+        .input-gradient {
+            background: linear-gradient(to bottom right, #1a1a1e, #141417);
+        }
+
+        /* POPUP STYLES */
+        .popup-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.85);
+            backdrop-filter: blur(12px);
+            z-index: 999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .popup-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        .popup-content {
+            max-width: 480px;
+            width: 100%;
+            background: #141417;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 28px;
+            padding: 32px;
+            transform: scale(0.9) translateY(20px);
+            transition: transform 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .popup-overlay.active .popup-content {
+            transform: scale(1) translateY(0);
+        }
+
+        .ai-gradient-bg {
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(59, 130, 246, 0.15) 0%, transparent 50%);
+            pointer-events: none;
+            animation: rotateBg 20s linear infinite;
+        }
+
+        @keyframes rotateBg {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-between p-4 sm:p-6">
+
+    <!-- AI POPUP NOTIFICATION -->
+    <div id="ai-popup" class="popup-overlay">
+        <div class="popup-content text-center">
+            <div class="ai-gradient-bg"></div>
+            <div class="relative z-10">
+                <div class="w-16 h-16 bg-blue-600/20 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-blue-500/30">
+                    <span class="text-2xl">✨</span>
+                </div>
+                <h2 class="text-2xl font-black text-white mb-3 tracking-tight">AI Integration Live</h2>
+                <p class="text-gray-400 text-sm leading-relaxed mb-8 px-4">
+                    Transform your secret messages with AI. Adjust tone, summarize long payloads, or generate complex decoy text—all within your browser.
+                </p>
+                <div class="grid grid-cols-1 gap-3 mb-8">
+                    <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5 text-left">
+                        <div class="w-2 h-2 rounded-full bg-blue-500"></div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-gray-300">Tone Transformation</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5 text-left">
+                        <div class="w-2 h-2 rounded-full bg-purple-500"></div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-gray-300">Security Analysis</span>
+                    </div>
+                    <div class="flex items-center gap-3 bg-white/5 p-3 rounded-xl border border-white/5 text-left">
+                        <div class="w-2 h-2 rounded-full bg-pink-500"></div>
+                        <span class="text-[11px] font-bold uppercase tracking-wider text-gray-300">Entropy Metrics</span>
+                    </div>
+                </div>
+                <button onclick="closePopup('ai-popup')" class="w-full py-4 bg-white text-black font-black uppercase text-xs tracking-widest rounded-xl hover:bg-gray-200 transition-all active:scale-95">
+                    Experience Intelligence
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div class="w-full flex flex-col items-center justify-center flex-grow">
+        <main class="w-full max-w-2xl flex flex-col gap-6 sm:gap-8 justify-center">
+            
+            <header class="flex flex-col items-center gap-4 sm:gap-6 text-center">
+                <div class="flex flex-col items-center">
+                    <h1 class="text-3xl sm:text-4xl font-black tracking-tighter text-white flex items-center gap-2 sm:gap-3">
+                        <svg class="w-8 h-8 sm:w-10 sm:h-10 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+                        ENCRYPT<span class="text-blue-500">ME</span>
+                    </h1>
+                    <p class="text-[9px] sm:text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em] sm:tracking-[0.3em] mt-1 sm:mt-2">Industrial Grade Cipher v4.0</p>
+                </div>
+                
+                <nav class="nav-container">
+                    <button id="tab-encrypt" class="tab-btn active" onclick="switchTab('encrypt')">Encrypt</button>
+                    <button id="tab-decrypt" class="tab-btn" onclick="switchTab('decrypt')">Decrypt</button>
+                </nav>
+            </header>
+
+            <div class="relative w-full">
+                <!-- Input Phase -->
+                <section id="input-card" class="fade-in glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl">
+                    <div class="space-y-4 sm:space-y-6">
+                        <div class="space-y-2">
+                            <div class="flex flex-wrap justify-between items-center gap-2">
+                                <label id="input-label" class="text-[10px] font-bold uppercase text-gray-500 tracking-widest">Message Source</label>
+                                <button id="ai-transform-btn" onclick="toggleAIInput()" class="text-[9px] sm:text-[10px] font-bold text-blue-400 uppercase tracking-wider flex items-center gap-1 hover:text-blue-300 transition-colors">
+                                    ✨ AI Transform
+                                </button>
+                            </div>
+                            
+                            <div id="ai-input-wrapper" class="hidden p-3 bg-blue-900/20 border border-blue-500/20 rounded-xl space-y-2 mb-3">
+                                <input type="text" id="ai-prompt" placeholder="e.g. 'Make it professional'" class="w-full p-2.5 text-xs rounded-lg bg-black/40 border border-blue-500/30 text-white focus:outline-none focus:ring-2 focus:ring-blue-500/50">
+                                <button onclick="applyAITransform()" id="ai-apply-btn" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white text-[9px] font-black uppercase rounded-lg transition-colors">Apply ✨</button>
+                            </div>
+
+                            <textarea id="user-input" rows="4" 
+                                class="w-full p-4 sm:p-6 input-gradient rounded-xl sm:rounded-2xl text-base sm:text-lg font-medium border border-white/5 text-white focus:border-blue-500/40 focus:ring-0 resize-none transition-all duration-300 mono-font placeholder:text-gray-600" 
+                                placeholder="Type secret message..."></textarea>
+                        </div>
+                        
+                        <button onclick="startProcessing()" 
+                            class="w-full group py-3.5 sm:py-4 px-6 bg-white text-black rounded-xl font-bold flex items-center justify-center gap-3 active:scale-[0.98] hover:bg-gray-100 transition-all">
+                            <span id="action-btn-text" class="text-sm sm:text-base">INITIATE ENCRYPTION</span>
+                            <svg class="w-4 h-4 sm:w-5 sm:h-5 group-hover:translate-x-1 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 7l5 5m0 0l-5 5m5-5H6"></path></svg>
+                        </button>
+                    </div>
+                </section>
+
+                <!-- Processing Phase -->
+                <section id="processing-card" class="hidden-visually glass-card rounded-2xl sm:rounded-3xl p-5 sm:p-8 shadow-2xl flex flex-col">
+                    <div class="flex justify-between items-start mb-4 sm:mb-6">
+                        <div class="max-w-[70%]">
+                            <span id="stage-text" class="text-xs sm:text-sm font-black uppercase tracking-tighter text-white truncate block">Initializing...</span>
+                            <p id="step-detail" class="text-[9px] font-mono text-gray-500 truncate">Stream active...</p>
+                        </div>
+                        <div class="px-2 py-1 bg-white/5 border border-white/10 rounded-full font-mono text-[9px] font-bold text-gray-400 shrink-0">
+                            <span id="timer">0.0s</span>
+                        </div>
+                    </div>
+
+                    <div class="flex-grow flex items-center justify-center py-4 min-h-[200px]">
+                        <div id="grid-container" class="matrix-grid mono-font"></div>
+                    </div>
+
+                    <div class="mt-4 sm:mt-6 space-y-3 sm:space-y-4">
+                        <div id="log-feed" class="log-feed mono-font"></div>
+                        <div class="h-1 w-full bg-white/5 rounded-full overflow-hidden">
+                            <div id="progress-bar" class="progress-bar"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Final Result Phase -->
+                <section id="output-card" class="hidden-visually fade-in">
+                    <div class="result-glow-container">
+                        <div class="bg-[#0c0c0e] text-white rounded-[1.4rem] sm:rounded-[1.85rem] p-6 sm:p-10 relative overflow-hidden">
+                            <div class="relative z-10">
+                                <header class="flex justify-between items-center mb-6 sm:mb-8 gap-4">
+                                    <div class="flex flex-col min-w-0">
+                                        <h3 class="text-[10px] font-bold uppercase tracking-[0.2em] text-blue-400 truncate">Payload Ready</h3>
+                                        <button onclick="analyzeSecurity()" id="analyze-btn" class="text-[9px] text-gray-500 hover:text-white mt-1 text-left flex items-center gap-1 transition-colors">
+                                            ✨ Analyze Security
+                                        </button>
+                                    </div>
+                                    <button onclick="copyToClipboard()" class="shrink-0 flex items-center gap-2 bg-white/5 border border-white/10 hover:bg-white/10 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg transition-all active:scale-95">
+                                        <span id="copy-label" class="text-[10px] font-bold uppercase">Copy</span>
+                                        <svg id="copy-icon" class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"></path></svg>
+                                        <svg id="check-icon" class="w-3.5 h-3.5 hidden text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"></path></svg>
+                                    </button>
+                                </header>
+                                
+                                <div class="bg-black/40 border border-white/5 rounded-xl sm:rounded-2xl p-4 sm:p-6 mb-6 sm:mb-8 max-h-[200px] overflow-y-auto shadow-inner">
+                                    <p id="output-text" class="text-lg sm:text-2xl font-mono break-all leading-relaxed tracking-tight text-white/90"></p>
+                                    <div id="security-analysis" class="hidden mt-4 pt-4 border-t border-white/10 text-[10px] text-blue-300 font-mono italic">
+                                        Decoding metrics...
+                                    </div>
+                                </div>
+
+                                <button onclick="resetApp()" class="w-full py-3 sm:py-4 text-[10px] font-bold uppercase tracking-widest text-gray-500 hover:text-white transition-colors border border-dashed border-white/10 rounded-xl hover:bg-white/5">
+                                    Process New String
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- CLEAN FOOTER - Text only, no background -->
+    <footer class="clean-footer mt-8 mb-4">
+        <div class="flex justify-center items-center">
+            <span class="rgb-text text-[11px] sm:text-[13px] uppercase tracking-[0.3em] mono-font">
+                Zain & Asad | All Rights Reserved
+            </span>
+        </div>
+    </footer>
+
+    <script>
+        const apiKey = ""; 
+        const COL_ORDER = [0, 5, 3, 1, 4, 2]; 
+        const COL_COUNT = 6;
+        let currentMode = 'encrypt';
+        let isProcessing = false;
+
+        const inputCard = document.getElementById('input-card');
+        const processingCard = document.getElementById('processing-card');
+        const outputCard = document.getElementById('output-card');
+        const userInput = document.getElementById('user-input');
+        const gridContainer = document.getElementById('grid-container');
+        const logFeed = document.getElementById('log-feed');
+        const timerEl = document.getElementById('timer');
+
+        // POPUP LOGIC
+        window.onload = () => {
+            setTimeout(() => {
+                document.getElementById('ai-popup').classList.add('active');
+            }, 800);
+        };
+
+        function closePopup(id) {
+            document.getElementById(id).classList.remove('active');
+            // If they click the button, we trigger the UI highlight for AI
+            if (id === 'ai-popup') {
+                const aiBtn = document.getElementById('ai-transform-btn');
+                aiBtn.classList.add('scale-110', 'text-white');
+                setTimeout(() => aiBtn.classList.remove('scale-110', 'text-white'), 1000);
+            }
+        }
+
+        async function callGemini(prompt, systemPrompt = "") {
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemPrompt }] }
+            };
+            for (let i = 0; i < 5; i++) {
+                try {
+                    const response = await fetch(url, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(payload)
+                    });
+                    const result = await response.json();
+                    return result.candidates?.[0]?.content?.parts?.[0]?.text;
+                } catch (e) {
+                    await new Promise(r => setTimeout(r, Math.pow(2, i) * 1000));
+                }
+            }
+            throw new Error("API Connection Failed");
+        }
+
+        function toggleAIInput() {
+            const wrapper = document.getElementById('ai-input-wrapper');
+            wrapper.classList.toggle('hidden');
+        }
+
+        async function applyAITransform() {
+            const prompt = document.getElementById('ai-prompt').value;
+            const content = userInput.value;
+            const btn = document.getElementById('ai-apply-btn');
+            if (!prompt || !content) return;
+            btn.innerText = "✨ Processing...";
+            try {
+                const transformedText = await callGemini(
+                    `Original text: "${content}". Instruction: "${prompt}". Return ONLY the modified text.`,
+                    "You are a pre-processor for an encryption system. Follow instructions exactly. Keep output concise."
+                );
+                userInput.value = transformedText.trim();
+                toggleAIInput();
+            } catch (e) {
+                console.error(e);
+            } finally {
+                btn.innerText = "Apply ✨";
+            }
+        }
+
+        async function analyzeSecurity() {
+            const cipherText = document.getElementById('output-text').innerText;
+            const analysisEl = document.getElementById('security-analysis');
+            const btn = document.getElementById('analyze-btn');
+            analysisEl.classList.remove('hidden');
+            analysisEl.innerText = "✨ AI probing entropy...";
+            btn.disabled = true;
+            try {
+                const analysis = await callGemini(
+                    `Analyze this cipher text for security strength: ${cipherText}`,
+                    "You are a cryptographer. Provide a 1-sentence technical analysis of security quality."
+                );
+                analysisEl.innerText = `[REPORT]: ${analysis}`;
+            } catch (e) {
+                analysisEl.innerText = "Probe failed.";
+            }
+        }
+
+        function addLog(msg) {
+            const entry = document.createElement('div');
+            entry.className = 'log-entry';
+            entry.innerText = `> ${msg}`;
+            logFeed.prepend(entry);
+        }
+
+        function switchTab(mode) {
+            if (isProcessing) return;
+            currentMode = mode;
+            document.getElementById('tab-encrypt').classList.toggle('active', mode === 'encrypt');
+            document.getElementById('tab-decrypt').classList.toggle('active', mode === 'decrypt');
+            document.getElementById('input-label').innerText = mode === 'encrypt' ? "Message Source" : "Cipher Text Source";
+            document.getElementById('action-btn-text').innerText = mode === 'encrypt' ? "INITIATE ENCRYPTION" : "INITIATE DECRYPTION";
+            document.getElementById('ai-transform-btn').style.display = mode === 'encrypt' ? 'flex' : 'none';
+            userInput.value = "";
+            outputCard.classList.add('hidden-visually');
+            inputCard.classList.remove('hidden-visually');
+        }
+
+        async function startProcessing() {
+            const text = userInput.value;
+            if (!text) return;
+            isProcessing = true;
+            inputCard.classList.add('hidden-visually');
+            processingCard.classList.remove('hidden-visually');
+            logFeed.innerHTML = '';
+            document.getElementById('security-analysis').classList.add('hidden');
+            
+            let startTime = Date.now();
+            let timerInterval = setInterval(() => {
+                timerEl.innerText = ((Date.now() - startTime) / 1000).toFixed(1) + "s";
+            }, 100);
+
+            try {
+                let data = currentMode === 'encrypt' ? prepareEncryptData(text) : prepareDecryptData(text);
+                addLog("System handshaking...");
+                await animateGridFill(data);
+                addLog("Layer: Vigenère Shift (Preserving non-alpha)");
+                await animateSubstitution(data);
+                addLog("Layer: Column Shuffling");
+                let result = await animateTransposition(data);
+                clearInterval(timerInterval);
+                await delay(500);
+                processingCard.classList.add('hidden-visually');
+                outputCard.classList.remove('hidden-visually');
+                document.getElementById('output-text').innerText = result;
+            } catch (e) {
+                addLog("CRITICAL ERROR: " + e.message);
+            } finally {
+                isProcessing = false;
+            }
+        }
+
+        function prepareEncryptData(text) {
+            let clean = text;
+            while (clean.length % COL_COUNT !== 0) { clean += " "; } 
+            let grid = [];
+            let rows = clean.length / COL_COUNT;
+            let index = 0;
+            for(let r=0; r<rows; r++) {
+                let row = [];
+                for(let c=0; c<COL_COUNT; c++) {
+                    row.push({ char: clean[index], id: `c-${r}-${c}`, row: r, col: c });
+                    index++;
+                }
+                grid.push(row);
+            }
+            return { grid, rows, cols: COL_COUNT };
+        }
+
+        function prepareDecryptData(text) {
+            let len = text.length;
+            let cols = COL_COUNT;
+            let rows = Math.ceil(len / cols);
+            let paddedText = text.padEnd(rows * cols, ' ');
+            let grid = Array(rows).fill(null).map(() => Array(cols).fill(null));
+            let charIdx = 0;
+            for (let i = 0; i < cols; i++) {
+                let targetCol = COL_ORDER[i];
+                for (let r = 0; r < rows; r++) {
+                    let char = paddedText[charIdx++];
+                    grid[r][targetCol] = { char: char, id: `c-${r}-${targetCol}`, row: r, col: targetCol };
+                }
+            }
+            return { grid, rows, cols: COL_COUNT };
+        }
+
+        async function animateGridFill(data) {
+            const { grid, rows, cols } = data;
+            document.getElementById('stage-text').innerText = "Matrix Mapping";
+            gridContainer.style.gridTemplateColumns = `repeat(${cols}, 1fr)`;
+            gridContainer.innerHTML = '';
+            let cellEls = [];
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    let item = grid[r][c];
+                    if (!item) continue;
+                    let el = document.createElement('div');
+                    el.id = item.id;
+                    el.className = 'matrix-cell mono-font';
+                    el.innerHTML = `<span>${item.char === ' ' ? '·' : item.char}</span>`;
+                    gridContainer.appendChild(el);
+                    cellEls.push(el);
+                }
+            }
+            const batchSize = 12;
+            for(let i=0; i<cellEls.length; i+=batchSize) {
+                cellEls.slice(i, i+batchSize).forEach(el => el.classList.add('active'));
+                await delay(30);
+            }
+            updateProgress(30);
+        }
+
+        function shiftChar(char, shift, mode) {
+            const isUpper = char >= 'A' && char <= 'Z';
+            const isLower = char >= 'a' && char <= 'z';
+            if (!isUpper && !isLower) return char; 
+            const start = isUpper ? 65 : 97;
+            const code = char.charCodeAt(0) - start;
+            let shifted = mode === 'encrypt' ? (code + shift) % 26 : (code - shift + 26) % 26;
+            return String.fromCharCode(shifted + start);
+        }
+
+        async function animateSubstitution(data) {
+            const { grid, rows, cols } = data;
+            document.getElementById('stage-text').innerText = "Shifting Alpha...";
+            let waitTime = Math.max(10, 1500 / (rows * cols));
+            for(let r=0; r<rows; r++) {
+                for(let c=0; c<cols; c++) {
+                    let item = grid[r][c];
+                    if (!item) continue;
+                    let el = document.getElementById(item.id);
+                    if (!el) continue;
+                    if (/[a-zA-Z]/.test(item.char)) {
+                        el.classList.add('substituting');
+                        item.char = shiftChar(item.char, c + 1, currentMode);
+                        await delay(waitTime);
+                        el.querySelector('span').innerText = item.char;
+                        el.classList.remove('substituting');
+                    } else {
+                        await delay(waitTime / 2);
+                    }
+                }
+            }
+            updateProgress(70);
+        }
+
+        async function animateTransposition(data) {
+            const { grid, rows, cols } = data;
+            document.getElementById('stage-text').innerText = "Shuffling Cols...";
+            let result = "";
+            let animDelay = Math.max(5, 1000 / (rows * cols));
+            if (currentMode === 'encrypt') {
+                for (let i = 0; i < cols; i++) {
+                    let targetCol = COL_ORDER[i];
+                    for (let r = 0; r < rows; r++) {
+                        let item = grid[r][targetCol];
+                        if (!item) continue;
+                        let el = document.getElementById(item.id);
+                        if (el) el.classList.add('transposing');
+                        await delay(animDelay);
+                        result += item.char;
+                    }
+                }
+            } else {
+                for(let r=0; r<rows; r++) {
+                    for(let c=0; c<cols; c++) {
+                        let item = grid[r][c];
+                        if (!item) continue;
+                        let el = document.getElementById(item.id);
+                        if (el) el.classList.add('transposing');
+                        await delay(animDelay);
+                        result += item.char;
+                    }
+                }
+                result = result.replace(/\s+$/, '');
+            }
+            updateProgress(100);
+            return result;
+        }
+
+        function updateProgress(p) { 
+            const bar = document.getElementById('progress-bar');
+            if (bar) bar.style.width = `${p}%`; 
+        }
+
+        function delay(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+        function resetApp() {
+            userInput.value = '';
+            inputCard.classList.remove('hidden-visually');
+            outputCard.classList.add('hidden-visually');
+            updateProgress(0);
+        }
+
+        async function copyToClipboard() {
+            const text = document.getElementById('output-text').innerText;
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.select();
+            const success = document.execCommand('copy');
+            document.body.removeChild(textArea);
+            if (success) {
+                document.getElementById('copy-icon').classList.add('hidden');
+                document.getElementById('check-icon').classList.remove('hidden');
+                document.getElementById('copy-label').innerText = "Done";
+                setTimeout(() => {
+                    document.getElementById('copy-icon').classList.remove('hidden');
+                    document.getElementById('check-icon').classList.add('hidden');
+                    document.getElementById('copy-label').innerText = "Copy";
+                }, 2000);
+            }
+        }
+    </script>
+</body>
+</html>
